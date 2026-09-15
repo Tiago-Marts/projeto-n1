@@ -22,12 +22,15 @@ typedef struct {
 #define MAX_NOME 50
 
 // Busca o ID do usuario na base e retorna 1 se o encontra e 0 se não.
-int login(Usuario* base_usuario, unsigned int id){
+int login(Usuario* base_usuario, size_t contador, int id){
     int resultado = 0;
 
-    for(int i = 0; i < MAX_USERS; i++){
+    for(int i = 0; i < contador; i++){
+        printf("%d\n",base_usuario[i].id);
+        printf("%s\n",base_usuario[i].nome);
         if(base_usuario[i].id == id){
             resultado = 1;
+
             goto end;
         }
     }
@@ -37,6 +40,7 @@ int login(Usuario* base_usuario, unsigned int id){
 }
 
 int cadastrar_usuario(Usuario* base_usuario, size_t* contador){
+    int resultado = 0;
     Usuario novo_usuario;
 
 
@@ -69,7 +73,15 @@ int cadastrar_usuario(Usuario* base_usuario, size_t* contador){
         char nome[MAX_NOME];
         printf("Digite o nome do usuario: ");
         fgets(nome, MAX_NOME, stdin);
-        printf("NOME: %s", nome);
+        novo_usuario.nome = nome;
+        printf("NOME: %s", novo_usuario.nome);
+    
+    cadastro:
+        base_usuario[*contador] = novo_usuario;
+        *contador += 1;
+
+    end:
+        return resultado;
 
 
 
@@ -107,7 +119,7 @@ int main(void){
             int id = 0;
             printf("ID do Login: ");
             scanf("%d", &id);
-            if(login(usuarios, id)){
+            if(login(usuarios, contador_usuario, id)){
 
             } else {
 
