@@ -39,10 +39,11 @@ int login(Usuario* base_usuario, size_t contador, int id){
         return resultado;
 }
 
+
+// Realiza as etapas de cadastro de usuario. Retorna 1 para sucesso e 0 para falha.
 int cadastrar_usuario(Usuario* base_usuario, size_t* contador){
     int resultado = 0;
     Usuario novo_usuario;
-
 
 
     cadastro_id:
@@ -70,15 +71,15 @@ int cadastrar_usuario(Usuario* base_usuario, size_t* contador){
     
     cadastro_nome:
         while(getchar() != '\n'); // Limpa o buffer;
-        char nome[MAX_NOME];
+        char *nome = malloc(MAX_NOME);
         printf("Digite o nome do usuario: ");
-        fgets(nome, MAX_NOME, stdin);
+        fgets(nome, MAX_NOME * sizeof(nome), stdin);
         novo_usuario.nome = nome;
-        printf("NOME: %s", novo_usuario.nome);
     
     cadastro:
         base_usuario[*contador] = novo_usuario;
         *contador += 1;
+        resultado = 1;
 
     end:
         return resultado;
@@ -86,6 +87,8 @@ int cadastrar_usuario(Usuario* base_usuario, size_t* contador){
 
 
 }
+
+
 // OPERACOES GERAIS DO USUARIO
 // 2 - Adicionar ao carrinho
 // 3 - Comprar
