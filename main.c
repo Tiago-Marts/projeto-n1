@@ -15,7 +15,9 @@ typedef struct {
     unsigned int id;
     char* nome;
     unsigned int carrinho[3];
+    size_t contador_carrinho;
     unsigned int colecao[100];
+    size_t contador_colecao;
 } Usuario;
 
 #define MAX_USERS 100
@@ -77,6 +79,8 @@ int cadastrar_usuario(Usuario* base_usuario, size_t* contador){
         novo_usuario.nome = nome;
     
     cadastro:
+        novo_usuario.contador_carrinho = 0;
+        novo_usuario.contador_colecao = 0;
         base_usuario[*contador] = novo_usuario;
         *contador += 1;
         resultado = 1;
@@ -89,12 +93,79 @@ int cadastrar_usuario(Usuario* base_usuario, size_t* contador){
 }
 
 
-// OPERACOES GERAIS DO USUARIO
+
+
 // 2 - Adicionar ao carrinho
+int adicionar_ao_carrinho(Usuario* base_usuario, unsigned int id_ativo, unsigned int jogo){
+    size_t contador = base_usuario->contador_carrinho;
+    base_usuario[id_ativo].carrinho[contador] = jogo;
+    contador++;
+    base_usuario->contador_carrinho = contador;
+}
+
+
 // 3 - Comprar
+int comprar_jogos(Usuario* base_usuario, unsigned int id_ativo){
+    int resultado = 0;
+
+    compra:
+        int quantidade; 
+        printf("Digite 0 para sair.\n");
+        printf("Digite quantos jogos deseja comprar (max. 3 por vez): ");
+        scanf("%d", &quantidade);
+
+        if(quantidade > 3){
+            printf("Limite excedido!\n");
+            goto compra;
+        } else if(quantidade == 0){
+            printf("Saindo da compra...\n");
+        } else {
+            for(int i = 0; i < quantidade; i++){
+                
+            }
+        }
+
+
+    end: 
+}
+
+
 // 4 - Coleção
 // 5 - Sair 
 // OPCIONAL - Manter salvo os valores
+
+
+// OPERACOES GERAIS DO USUARIO
+void usuario_ativo(Usuario* base_usuario, Jogo* base_jogo, unsigned int id_ativo){
+    int opt_usuario = 0;
+
+    while(opt_usuario != 4){
+        printf("MENU\n");
+        printf("1. Comprar Jogo\n");
+        printf("2. Ver coleção\n");
+        printf("3. Atualizar os dados\n");
+        printf("4. Sair\n");
+        printf("Digite a opcao a ser esoclhida: ");
+        scanf("%d", &opt_usuario);
+
+        switch (opt_usuario)
+        {
+        case 1:
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        
+        case 4: 
+            break;
+        
+        default:
+            break;
+        }
+    }
+}
+
 
 int main(void){
     Jogo jogos[50];
