@@ -5,6 +5,8 @@
 #define MAX_USERS 100
 #define MAX_NOME 50
 #define MAX_DESC 100
+#define MAX_COLECAO 100
+#define MAX_CARRINHO 3
 
 //Jogos
 typedef struct {
@@ -18,9 +20,9 @@ typedef struct {
 typedef struct {
     unsigned int id;
     char* nome;
-    unsigned int carrinho[3];
+    unsigned int carrinho[MAX_CARRINHO];
     size_t contador_carrinho;
-    unsigned int colecao[100];
+    unsigned int colecao[MAX_COLECAO];
     size_t contador_colecao;
 } Usuario;
 
@@ -32,7 +34,6 @@ int busca_jogo(Jogo* base_jogo, unsigned int id_jogo, size_t contador){
     for(size_t i = 0; i < contador; i++){
         if(base_jogo[i].id == id_jogo){
             resultado = 1;
-            printf("preco jogo: %.2f\n", base_jogo[i].preco);
             goto end;
 
         }
@@ -42,6 +43,22 @@ int busca_jogo(Jogo* base_jogo, unsigned int id_jogo, size_t contador){
         return resultado;
 }
 
+//Retorna o id do jogo ao fazer uma busca pelo ID
+Jogo* get_jogo(Jogo* base_jogo, unsigned int id_jogo, size_t contador_jogo){
+    Jogo* jogo_buscado = nullptr;
+    for(size_t i = 0; i < contador_jogo; i++){
+        if(base_jogo[i].id == id_jogo){
+            jogo_buscado = &base_jogo[i];
+            goto end;
+
+        }
+    }
+
+    end:
+        return jogo_buscado;
+}
+
+//Retorna o preco do jogo ao fazer uma besca pelo ID
 float busca_preco(Jogo* base_jogo, unsigned int id_jogo, size_t contador){
     float preco = 0.0f;
 
@@ -56,7 +73,7 @@ float busca_preco(Jogo* base_jogo, unsigned int id_jogo, size_t contador){
 
 }
 
-
+//Adiciona um novo jogo a base de jogos
 int adiciona_jogo(Jogo* base_jogo, size_t* contador_jogo){
     int resultado = 0;
     Jogo novo_jogo;
@@ -95,18 +112,26 @@ int adiciona_jogo(Jogo* base_jogo, size_t* contador_jogo){
 
 }
 
+//OPERACOES USUARIOS
+Usuario* get_usuario(Usuario* base_usuario, size_t contador, unsigned int id_ativo){
+    Usuario* usuario;
+    for(int i = 0; i < contador; i++){
+        if(base_usuario[i].id == id_ativo){
+            usuario = &base_usuario[i];
+        }
+    }
 
+    return usuario;
+}
 
 // Busca o ID do usuario na base e retorna 1 se o encontra e 0 se não.
 int login(Usuario* base_usuario, size_t contador, int id){
     int resultado = 0;
 
     for(int i = 0; i < contador; i++){
-        printf("%d\n",base_usuario[i].id);
-        printf("%s\n",base_usuario[i].nome);
         if(base_usuario[i].id == id){
             resultado = 1;
-
+            printf("Entrando como %s", base_usuario[i].nome);
             goto end;
         }
     }
@@ -114,8 +139,6 @@ int login(Usuario* base_usuario, size_t contador, int id){
     end:
         return resultado;
 }
-
-
 
 // Realiza as etapas de cadastro de usuario. Retorna 1 para sucesso e 0 para falha.
 int cadastrar_usuario(Usuario* base_usuario, size_t* contador){
@@ -158,6 +181,7 @@ int cadastrar_usuario(Usuario* base_usuario, size_t* contador){
         novo_usuario.contador_colecao = 0;
         base_usuario[*contador] = novo_usuario;
         *contador += 1;
+        printf("%d\n", *contador);
         resultado = 1;
 
     end:
@@ -165,21 +189,33 @@ int cadastrar_usuario(Usuario* base_usuario, size_t* contador){
 
 }
 
-
 // 2 - Adicionar ao carrinho
-int adicionar_ao_carrinho(Usuario* base_usuario, unsigned int id_ativo, unsigned int jogo){
-    size_t contador = base_usuario[id_ativo].contador_carrinho;
-    base_usuario[id_ativo].carrinho[contador] = jogo;
+int adicionar_ao_carrinho(Usuario* base_usuario, size_t contador_usuario, unsigned int id_ativo, unsigned int jogo){
+    Usuario* usuario = get_usuario(base_usuario, contador_usuario, id_ativo);
+    int resultado = 0;
+    size_t contador = usuario->contador_carrinho;
+    if(contador == MAX_CARRINHO){
+        printf("CARRINHO CHEIO!\n");
+        goto end;
+    }
+
+    usuario->carrinho[contador] = jogo;
     contador++;
-    base_usuario[id_ativo].contador_carrinho = contador;
+    usuario->contador_carrinho = contador;
+    resultado = 1;
+
+    end:
+        return resultado;
 }
 
-float preco_carrinho_final(Usuario* base_usuario, Jogo* base_jogo, size_t contador_jogo, unsigned int id_ativo){
+//Calcula o preco total dos itens presentes no carrinho
+float preco_carrinho_final(Usuario* base_usuario, size_t contador_usuario, Jogo* base_jogo, size_t contador_jogo, unsigned int id_ativo){
+    Usuario* usuario = get_usuario(base_usuario,contador_usuario, id_ativo);
     float soma_preco = 0.0f;
-    size_t contador = base_usuario[id_ativo].contador_carrinho;
+    size_t contador = usuario->contador_carrinho;
 
     for(int i = 0; i < contador; i++){
-        unsigned int id = base_usuario[id_ativo].carrinho[i];
+        unsigned int id = usuario->carrinho[i];
 
         soma_preco += busca_preco(base_jogo, id, contador_jogo);
 
@@ -188,9 +224,40 @@ float preco_carrinho_final(Usuario* base_usuario, Jogo* base_jogo, size_t contad
     return soma_preco;
 }
 
+//A funcao diminui o contador do carrinho, permitindo que os items sejam sobrescrevidos
+void limpa_carrinho(Usuario* base_usuario, size_t contador_usuario, unsigned int id_ativo){
+    Usuario* usuario = get_usuario(base_usuario, contador_usuario,id_ativo);
+    memset(usuario->carrinho, 0, sizeof usuario->carrinho);
+    usuario->contador_carrinho = 0;
+}
+
+//Adiciona jogos a colecao depois da compra. A funcao limpa o carrinho
+int adicionar_a_colecao(Usuario* base_usuario,size_t contador_usuario, unsigned int id_ativo){
+    int resultado = 0;
+    Usuario* usuario = get_usuario(base_usuario, contador_usuario, id_ativo);
+    size_t contador_carrinho = usuario->contador_carrinho;
+    size_t contador_colecao = usuario->contador_colecao;
+
+    if(contador_colecao == MAX_COLECAO) {
+        printf("ERRO! O usuario possui o maximo de jogos possiveis %d\n", MAX_COLECAO);
+        goto end;
+    }
+
+    for(int i = 0; i < contador_carrinho; i++){
+        usuario->colecao[contador_colecao] = usuario->carrinho[i];
+        contador_colecao++;
+    }
+
+    limpa_carrinho(base_usuario, contador_usuario, id_ativo);
+    base_usuario->contador_colecao = contador_colecao;
+    resultado = 1;
+
+    end:
+        return resultado;
+}
 
 // 3 - Comprar
-int comprar_jogos(Usuario* base_usuario, Jogo* base_jogo, size_t contador_jogo, unsigned int id_ativo){
+int comprar_jogos(Usuario* base_usuario, size_t contador_usuario, Jogo* base_jogo, size_t contador_jogo, unsigned int id_ativo){
     int resultado = 0;
 
     carrinho:
@@ -210,35 +277,87 @@ int comprar_jogos(Usuario* base_usuario, Jogo* base_jogo, size_t contador_jogo, 
 
                     unsigned int id_jogo = 0;
                     printf("Digite o ID do jogo que deseja comprar: ");
-                    scanf("%d", &id_jogo);
+                    scanf("%u", &id_jogo);
                     if(!busca_jogo(base_jogo,id_jogo, contador_jogo)) {
                         printf("Id nao existente...\n");
                         goto adicao_compra;
                     }
-                    printf("Passou\n");
-                    adicionar_ao_carrinho(base_usuario, id_ativo, id_jogo);
+                    adicionar_ao_carrinho(base_usuario, contador_usuario, id_ativo, id_jogo);
             }
         }
 
     compra:
         int confirm = 0;
-        float preco_final = preco_carrinho_final(base_usuario, base_jogo, contador_jogo,  id_ativo);
-        printf("PRECO FINAL: ")
+        float preco_final = preco_carrinho_final(base_usuario, contador_usuario, base_jogo, contador_jogo,  id_ativo);
+        printf("PRECO FINAL: %.2f\n", preco_final);
         printf("Digite 1 para confirmar a compra e 0 para negar: ");
+        scanf("%d", &confirm);
+        if(confirm == 0){
+            limpa_carrinho(base_usuario,contador_usuario, id_ativo);
+            printf("Compra negada...\n Voltando para o menu de usuario.\n");
+            goto end;
+        } else if(confirm == 1){
+            adicionar_a_colecao(base_usuario, contador_usuario, id_ativo);
+            printf("Compra aprovada! Items adicionados a colecao!\nVoltando para o menu de usuario.\n");
+        } else {
+            printf("ERRO. RESPOSTA INVALIDA\n. Tente novamente...");
+            goto compra;
+        }
 
 
     end:
         return resultado;
 }
 
-
 // 4 - Coleção
-// 5 - Sair
+int ver_colecao(Usuario* base_usuario, size_t contador_usuario, Jogo* base_jogo, size_t contador_jogo, unsigned int id_ativo){
+    int resultado = 0;
+    Usuario* usuario = get_usuario(base_usuario, contador_usuario, id_ativo);
+    size_t contador = usuario->contador_colecao;
+
+    Jogo* jogo_colecao = nullptr;
+    printf("=========================\n");
+    printf("COLECAO\n");
+    printf("=========================\n");
+    printf("\n");
+    for(int i = 0; i < contador; i++){
+        jogo_colecao = get_jogo(base_jogo, usuario->colecao[i], contador_jogo);
+
+        if(jogo_colecao == nullptr){
+            goto end;
+        }
+
+        printf("=========================\n");
+        printf("\tID: %u\n", jogo_colecao->id);
+        printf("\tNOME: %s", jogo_colecao->nome);
+        printf("\tDESC: %s", jogo_colecao->descricao);
+        printf("\tPRECO: %.2f\n", jogo_colecao->preco);
+        printf("=========================\n");
+    }
+
+    resultado = 1;
+
+    end:
+        return resultado;
+}
+
+// 5 - Atualizar Dados
+void atualiza_dados(Usuario* base_usuario, size_t contador_usuario, unsigned int id_ativo){
+    Usuario* usuario = get_usuario(base_usuario, contador_usuario, id_ativo);
+    while(getchar() != '\n');
+    printf("Atualizando os dados do usuario %s", usuario->nome);
+    char* novo_nome = malloc(MAX_NOME * sizeof(char));
+    printf("Digite o novo nome do usuario: ");
+    fgets(novo_nome, MAX_NOME, stdin);
+    usuario->nome = novo_nome;
+
+}
+
 // OPCIONAL - Manter salvo os valores
 
 
 // OPERACOES GERAIS DO USUARIO
-void usuario_ativo(Usuario* base_usuario, Jogo* base_jogo, unsigned int id_ativo, size_t* contador_usuario, size_t* contador_jogo){
+void usuario_ativo(Usuario* base_usuario, Jogo* base_jogo, unsigned int *id_ativo, size_t* contador_usuario, size_t* contador_jogo){
     int opt_usuario = 0;
 
     while(opt_usuario != 4){
@@ -253,17 +372,24 @@ void usuario_ativo(Usuario* base_usuario, Jogo* base_jogo, unsigned int id_ativo
         switch (opt_usuario)
         {
         case 1:
-            comprar_jogos(base_usuario, base_jogo, *contador_jogo, id_ativo);
+            comprar_jogos(base_usuario, *contador_usuario, base_jogo, *contador_jogo, *id_ativo);
             break;
+
         case 2:
+            ver_colecao(base_usuario, *contador_usuario, base_jogo, *contador_jogo, *id_ativo);
             break;
+
         case 3:
+            atualiza_dados(base_usuario,*contador_usuario, *id_ativo);
             break;
 
         case 4:
+            *id_ativo = 0;
+            printf("Saindo...\n");
             break;
 
         default:
+            printf("Opcao invalida!\n");
             break;
         }
     }
@@ -294,13 +420,13 @@ int main(void){
             break;
 
         case 2:
-            int id = 0;
+            unsigned int id = 0;
             printf("ID do Login: ");
-            scanf("%d", &id);
+            scanf("%u", &id);
             if(login(usuarios, contador_usuario, id)){
-                usuario_ativo(usuarios, jogos, id, &contador_usuario, &contador_jogos);
+                usuario_ativo(usuarios, jogos, &id, &contador_usuario, &contador_jogos);
             } else {
-
+                printf("ERRO: USUARIO NAO ENCONTRADO\n");
             }
             break;
 
